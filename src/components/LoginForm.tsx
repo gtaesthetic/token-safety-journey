@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AlertCircle, Info } from 'lucide-react';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -88,6 +89,17 @@ const LoginForm: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
+        <div className="flex">
+          <Info className="h-5 w-5 text-blue-500 mr-2" />
+          <div className="text-sm text-blue-700">
+            <p className="font-medium mb-1">Demo Accounts:</p>
+            <p>Employee: employee@example.com / password123</p>
+            <p>Manager: manager@example.com / password123</p>
+          </div>
+        </div>
+      </div>
+      
       <div className="form-group">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -120,8 +132,9 @@ const LoginForm: React.FC = () => {
       </div>
       
       {error && (
-        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md animate-fade-in">
-          {error}
+        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md animate-fade-in flex items-start">
+          <AlertCircle className="h-4 w-4 mr-2 mt-0.5" />
+          <span>{error}</span>
         </div>
       )}
       

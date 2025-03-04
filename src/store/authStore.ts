@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
+import { mockAuthApi } from '../services/mockAuth';
 
 export type UserRole = 'employee' | 'manager';
 
@@ -67,19 +68,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-          
-          const data = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
-          }
+          // Use the mock API instead of fetch
+          const data = await mockAuthApi.login(email, password);
           
           // Extract user information from the token
           const user = extractUserFromToken(data.token);
@@ -106,19 +96,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          const response = await fetch('/api/register', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name, email, password, role }),
-          });
-          
-          const data = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(data.message || 'Registration failed');
-          }
+          // Use the mock API instead of fetch
+          const data = await mockAuthApi.register(name, email, password, role);
           
           // Extract user information from the token
           const user = extractUserFromToken(data.token);
