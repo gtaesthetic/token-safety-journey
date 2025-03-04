@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
-import { mockAuthApi } from '../services/mockAuth';
+import { api } from '../services/api';
 
 export type UserRole = 'employee' | 'manager';
 
@@ -16,7 +16,9 @@ export interface User {
 interface JwtPayload {
   sub: string;
   email: string;
-  name: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   role: UserRole;
   exp: number;
 }
@@ -29,7 +31,7 @@ interface AuthState {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -42,11 +44,17 @@ const extractUserFromToken = (token: string): User | null => {
     if (decoded.exp * 1000 < Date.now()) {
       return null;
     }
+
+    // Handle different JWT payload formats (Django vs. mock)
+    let name = decoded.name;
+    if (!name && (decoded.first_name || decoded.last_name)) {
+      name = `${decoded.first_name || ''} ${decoded.last_name || ''}`.trim();
+    }
     
     return {
       id: decoded.sub,
       email: decoded.email,
-      name: decoded.name,
+      name: name || 'Unknown User',
       role: decoded.role
     };
   } catch (error) {
@@ -68,18 +76,18 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          // Use the mock API instead of fetch
-          const data = await mockAuthApi.login(email, password);
+          // Use the real API
+          const data = await api.auth.login(email, password);
           
           // Extract user information from the token
-          const user = extractUserFromToken(data.token);
+          const user = extractUserFromToken(data.access);
           
           if (!user) {
             throw new Error('Invalid or expired token');
           }
           
           set({
-            token: data.token,
+            token: data.access,
             user,
             isAuthenticated: true,
             isLoading: false,
@@ -96,18 +104,18 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          // Use the mock API instead of fetch
-          const data = await mockAuthApi.register(name, email, password, role);
+          // Use the real API
+          const data = await api.auth.register(name, email, password, role);
           
           // Extract user information from the token
-          const user = extractUserFromToken(data.token);
+          const user = extractUserFromToken(data.access);
           
           if (!user) {
             throw new Error('Invalid or expired token');
           }
           
           set({
-            token: data.token,
+            token: data.access,
             user,
             isAuthenticated: true,
             isLoading: false,
@@ -120,13 +128,34 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        set({
-          token: null,
-          user: null,
-          isAuthenticated: false,
-          error: null,
-        });
+      logout: async () => {
+        try {
+          set({ isLoading: true });
+          
+          // If authenticated, call the logout API
+          if (get().isAuthenticated && get().token) {
+            await api.auth.logout();
+          }
+          
+          // Clear auth state regardless of API call result
+          set({
+            token: null,
+            user: null,
+            isAuthenticated: false,
+            error: null,
+            isLoading: false,
+          });
+        } catch (error) {
+          // Even if the API call fails, we still want to clean up local state
+          set({
+            token: null,
+            user: null,
+            isAuthenticated: false,
+            error: null,
+            isLoading: false,
+          });
+          console.error('Logout error:', error);
+        }
       },
 
       clearError: () => {

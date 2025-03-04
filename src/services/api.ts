@@ -1,15 +1,16 @@
 
 import { useAuthStore } from '../store/authStore';
+import { UserRole } from '../store/authStore';
 
-// Base API URL
-const API_URL = '/api';
+// Base API URL - update this to your Django backend URL
+const API_URL = 'http://localhost:8000/api';
 
 // Helper function to handle response
 async function handleResponse(response: Response) {
   const data = await response.json();
   
   if (!response.ok) {
-    const error = data.message || response.statusText;
+    const error = data.detail || data.message || response.statusText;
     throw new Error(error);
   }
   
@@ -37,7 +38,7 @@ export const api = {
   // Authentication methods
   auth: {
     login: async (email: string, password: string) => {
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${API_URL}/login/`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ email, password }),
@@ -46,11 +47,40 @@ export const api = {
       return handleResponse(response);
     },
     
-    register: async (userData: { name: string; email: string; password: string; role: string }) => {
-      const response = await fetch(`${API_URL}/register`, {
+    register: async (name: string, email: string, password: string, role: UserRole) => {
+      // Split name into first_name and last_name (assuming space separation)
+      const nameParts = name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      
+      const response = await fetch(`${API_URL}/register/`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify(userData),
+        body: JSON.stringify({ 
+          first_name: firstName,
+          last_name: lastName,
+          email, 
+          password, 
+          role 
+        }),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    logout: async () => {
+      const response = await fetch(`${API_URL}/logout/`, {
+        method: 'POST',
+        headers: getHeaders(true),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    getUser: async () => {
+      const response = await fetch(`${API_URL}/user/`, {
+        method: 'GET',
+        headers: getHeaders(true),
       });
       
       return handleResponse(response);
@@ -60,7 +90,7 @@ export const api = {
   // Protected API methods (example)
   protected: {
     getEmployeeData: async () => {
-      const response = await fetch(`${API_URL}/employee/data`, {
+      const response = await fetch(`${API_URL}/employee/data/`, {
         method: 'GET',
         headers: getHeaders(true),
       });
@@ -69,7 +99,7 @@ export const api = {
     },
     
     getManagerData: async () => {
-      const response = await fetch(`${API_URL}/manager/data`, {
+      const response = await fetch(`${API_URL}/manager/data/`, {
         method: 'GET',
         headers: getHeaders(true),
       });
