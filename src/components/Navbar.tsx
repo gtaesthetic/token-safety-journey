@@ -18,6 +18,11 @@ const Navbar = () => {
     });
   };
 
+  const getDashboardLink = () => {
+    if (!user) return '/login';
+    return user.role === 'manager' ? '/dashboard/manager' : '/dashboard/employee';
+  };
+
   return (
     <nav className="bg-background border-b border-border/40 backdrop-blur-sm sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,7 +42,7 @@ const Navbar = () => {
               </Link>
               {user && (
                 <Link 
-                  to={user.role === 'manager' ? '/manager-dashboard' : '/employee-dashboard'} 
+                  to={getDashboardLink()} 
                   className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
                   Dashboard

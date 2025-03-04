@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,44 @@ const LoginForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the redirect path from location state, or default to dashboard paths
+  const from = (location.state as { from?: string })?.from || null;
+  
+  // Effect to redirect after successful login
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      let redirectPath;
+      
+      // Try to redirect to the original requested URL if it exists and matches the user's role
+      if (from) {
+        const isEmployeePath = from.includes('/dashboard/employee') || from === '/employee-dashboard';
+        const isManagerPath = from.includes('/dashboard/manager') || from === '/manager-dashboard';
+        
+        if ((user.role === 'employee' && isEmployeePath) || 
+            (user.role === 'manager' && isManagerPath)) {
+          redirectPath = from;
+        }
+      }
+      
+      // If no valid from path, redirect based on role
+      if (!redirectPath) {
+        redirectPath = user.role === 'employee' 
+          ? '/dashboard/employee' 
+          : '/dashboard/manager';
+      }
+      
+      navigate(redirectPath, { replace: true });
+      
+      toast({
+        title: "Welcome!",
+        description: `You've successfully signed in as a ${user.role}.`,
+      });
+    }
+  }, [isAuthenticated, user, navigate, from]);
 
   const validateForm = () => {
     const errors: { email?: string; password?: string } = {};
@@ -44,26 +80,7 @@ const LoginForm: React.FC = () => {
     
     try {
       await login(email, password);
-      
-      // Get updated state after login
-      const { user, isAuthenticated } = useAuthStore.getState();
-      
-      if (isAuthenticated && user) {
-        // Redirect based on user role
-        if (user.role === 'employee') {
-          navigate('/employee-dashboard');
-          toast({
-            title: "Welcome!",
-            description: "You've successfully signed in as an employee.",
-          });
-        } else if (user.role === 'manager') {
-          navigate('/manager-dashboard');
-          toast({
-            title: "Welcome!",
-            description: "You've successfully signed in as a manager.",
-          });
-        }
-      }
+      // Redirection is handled by the useEffect above
     } catch (err) {
       // Error is handled in the store
     }
@@ -81,13 +98,13 @@ const LoginForm: React.FC = () => {
           onChange={(e) => setEmail(e.target.value)}
           className={formErrors.email ? 'border-destructive' : ''}
         />
-        {formErrors.email && <p className="form-error">{formErrors.email}</p>}
+        {formErrors.email && <p className="text-sm text-destructive mt-1">{formErrors.email}</p>}
       </div>
       
       <div className="form-group">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
-          <a href="/forgot-password" className="auth-link text-xs">
+          <a href="/forgot-password" className="text-xs text-primary hover:underline">
             Forgot password?
           </a>
         </div>
@@ -99,7 +116,7 @@ const LoginForm: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           className={formErrors.password ? 'border-destructive' : ''}
         />
-        {formErrors.password && <p className="form-error">{formErrors.password}</p>}
+        {formErrors.password && <p className="text-sm text-destructive mt-1">{formErrors.password}</p>}
       </div>
       
       {error && (
@@ -115,7 +132,7 @@ const LoginForm: React.FC = () => {
       <div className="text-center mt-6">
         <span className="text-sm text-muted-foreground">
           Don't have an account?{' '}
-          <a href="/register" className="auth-link font-medium">
+          <a href="/register" className="text-primary font-medium hover:underline">
             Sign up
           </a>
         </span>

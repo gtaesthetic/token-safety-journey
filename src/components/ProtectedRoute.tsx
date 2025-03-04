@@ -29,15 +29,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     }
   }, [isAuthenticated, user, allowedRoles]);
 
-  // If not authenticated, redirect to login
+  // If not authenticated, redirect to login with the intended location
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated but role not allowed, redirect to appropriate dashboard
+  // If authenticated but role not allowed, redirect to forbidden page
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    const redirectPath = user.role === 'employee' ? '/employee-dashboard' : '/manager-dashboard';
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to="/forbidden" replace />;
   }
 
   // If authenticated and role is allowed (or no role check), render children

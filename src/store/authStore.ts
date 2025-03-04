@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { jwtDecode } from 'jwt-decode';
 
 export type UserRole = 'employee' | 'manager';
 
@@ -9,6 +10,14 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+}
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  exp: number;
 }
 
 interface AuthState {
@@ -22,6 +31,28 @@ interface AuthState {
   logout: () => void;
   clearError: () => void;
 }
+
+// Helper function to extract user data from JWT token
+const extractUserFromToken = (token: string): User | null => {
+  try {
+    const decoded = jwtDecode<JwtPayload>(token);
+    
+    // Check if token has expired
+    if (decoded.exp * 1000 < Date.now()) {
+      return null;
+    }
+    
+    return {
+      id: decoded.sub,
+      email: decoded.email,
+      name: decoded.name,
+      role: decoded.role
+    };
+  } catch (error) {
+    console.error('Failed to decode token:', error);
+    return null;
+  }
+};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -50,9 +81,16 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(data.message || 'Login failed');
           }
           
+          // Extract user information from the token
+          const user = extractUserFromToken(data.token);
+          
+          if (!user) {
+            throw new Error('Invalid or expired token');
+          }
+          
           set({
             token: data.token,
-            user: data.user,
+            user,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -82,9 +120,16 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(data.message || 'Registration failed');
           }
           
+          // Extract user information from the token
+          const user = extractUserFromToken(data.token);
+          
+          if (!user) {
+            throw new Error('Invalid or expired token');
+          }
+          
           set({
             token: data.token,
-            user: data.user,
+            user,
             isAuthenticated: true,
             isLoading: false,
           });
