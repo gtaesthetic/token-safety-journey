@@ -7,7 +7,7 @@ This project includes both a frontend (React/TypeScript) and backend (Django) fo
 
 ### Prerequisites
 - Python 3.8 or higher
-- pip (Python package installer)
+- Conda (Miniconda or Anaconda)
 
 ### Setting up the Django Backend
 1. Open a terminal and navigate to the backend directory:
@@ -15,14 +15,10 @@ This project includes both a frontend (React/TypeScript) and backend (Django) fo
    cd employee-manager-backend
    ```
 
-2. Activate the virtual environment:
-   - Windows:
+2. Create and activate a Conda environment:
    ```
-   venv\Scripts\activate
-   ```
-   - Unix or MacOS:
-   ```
-   source venv/bin/activate
+   conda create -n employee-manager-env python=3.12
+   conda activate employee-manager-env
    ```
 
 3. Install required packages (if not already installed):
@@ -71,7 +67,7 @@ The frontend will be available at http://localhost:4000/ or http://localhost:808
 ## Troubleshooting
 
 ### Backend issues:
-- Make sure the virtual environment is activated before running the server
+- Make sure the Conda environment is activated before running the server
 - Check that all required packages are installed
 - Verify database connection details if using PostgreSQL
 

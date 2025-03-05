@@ -7,7 +7,7 @@ This is the Django backend for the Employee Manager application.
 
 ### Prerequisites
 - Python 3.8 or higher
-- pip (Python package installer)
+- Conda (Miniconda or Anaconda)
 - Django
 - Django Rest Framework
 - PostgreSQL (optional, SQLite is configured by default)
@@ -18,14 +18,10 @@ This is the Django backend for the Employee Manager application.
    cd employee-manager-backend
    ```
 
-2. Activate the virtual environment:
-   - Windows:
+2. Create and activate a Conda environment:
    ```
-   venv\Scripts\activate
-   ```
-   - Unix or MacOS:
-   ```
-   source venv/bin/activate
+   conda create -n employee-manager-env python=3.12
+   conda activate employee-manager-env
    ```
 
 3. Install the required packages:
@@ -72,4 +68,4 @@ The server will be available at http://localhost:8000/
 ## Common Issues
 - If you have issues with CORS, check the CORS_ALLOWED_ORIGINS in settings.py
 - If you can't connect to PostgreSQL, make sure the service is running and credentials are correct
-- Make sure the virtual environment is activated before running commands
+- Make sure the Conda environment is activated before running commands
