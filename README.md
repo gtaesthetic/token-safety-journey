@@ -4,7 +4,7 @@ make sure to open your vs code with administration access
 to access the back end, first u have to run the commands in the vs code terminal:
 
 /cd employee-manager-backend
-/ven\Scripts\Activate
+/venv\Scripts\Activate
 /python manage.py runserver
 
 to run the front end, make sure to run this in the vs code terminal:
