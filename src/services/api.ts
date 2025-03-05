@@ -7,14 +7,27 @@ const API_URL = 'http://localhost:8000/api';
 
 // Helper function to handle response
 async function handleResponse(response: Response) {
-  const data = await response.json();
-  
+  // First check if the response is ok before trying to parse JSON
   if (!response.ok) {
-    const error = data.detail || data.message || data.error || response.statusText;
-    throw new Error(error);
+    // Try to get error details from the response if possible
+    try {
+      const errorData = await response.json();
+      const errorMessage = errorData.detail || errorData.message || errorData.error || response.statusText;
+      throw new Error(errorMessage);
+    } catch (e) {
+      // If we can't parse the error as JSON, just throw the status text
+      throw new Error(response.statusText || 'Network request failed');
+    }
   }
   
-  return data;
+  // If response is ok, then parse JSON
+  try {
+    const data = await response.json();
+    return data;
+  } catch (e) {
+    console.error('Failed to parse JSON response:', e);
+    throw new Error('Invalid response format');
+  }
 }
 
 // Create headers with authorization token when needed
@@ -38,52 +51,84 @@ export const api = {
   // Authentication methods
   auth: {
     login: async (email: string, password: string) => {
-      const response = await fetch(`${API_URL}/login/`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ email, password }),
-      });
+      console.log('Attempting login with:', { email, password });
       
-      return handleResponse(response);
+      try {
+        const response = await fetch(`${API_URL}/login/`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ email, password }),
+          credentials: 'include', // Include cookies if any
+        });
+        
+        console.log('Login response status:', response.status);
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Login request failed:', error);
+        throw error;
+      }
     },
     
     register: async (name: string, email: string, password: string, role: UserRole) => {
+      console.log('Attempting registration with:', { name, email, role });
+      
       // Split name into first_name and last_name (assuming space separation)
       const nameParts = name.split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      const response = await fetch(`${API_URL}/register/`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ 
-          first_name: firstName,
-          last_name: lastName,
-          email, 
-          password, 
-          role 
-        }),
-      });
-      
-      return handleResponse(response);
+      try {
+        const response = await fetch(`${API_URL}/register/`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ 
+            first_name: firstName,
+            last_name: lastName,
+            email, 
+            password, 
+            role 
+          }),
+          credentials: 'include', // Include cookies if any
+        });
+        
+        console.log('Registration response status:', response.status);
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Registration request failed:', error);
+        throw error;
+      }
     },
     
     logout: async () => {
-      const response = await fetch(`${API_URL}/logout/`, {
-        method: 'POST',
-        headers: getHeaders(true),
-      });
-      
-      return handleResponse(response);
+      try {
+        const response = await fetch(`${API_URL}/logout/`, {
+          method: 'POST',
+          headers: getHeaders(true),
+          credentials: 'include', // Include cookies if any
+        });
+        
+        console.log('Logout response status:', response.status);
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Logout request failed:', error);
+        throw error;
+      }
     },
     
     getUser: async () => {
-      const response = await fetch(`${API_URL}/user/`, {
-        method: 'GET',
-        headers: getHeaders(true),
-      });
-      
-      return handleResponse(response);
+      try {
+        const response = await fetch(`${API_URL}/user/`, {
+          method: 'GET',
+          headers: getHeaders(true),
+          credentials: 'include', // Include cookies if any
+        });
+        
+        console.log('Get user response status:', response.status);
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Get user request failed:', error);
+        throw error;
+      }
     },
   },
   
