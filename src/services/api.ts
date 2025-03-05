@@ -10,7 +10,7 @@ async function handleResponse(response: Response) {
   const data = await response.json();
   
   if (!response.ok) {
-    const error = data.detail || data.message || response.statusText;
+    const error = data.detail || data.message || data.error || response.statusText;
     throw new Error(error);
   }
   
@@ -87,7 +87,7 @@ export const api = {
     },
   },
   
-  // Protected API methods (example)
+  // Protected API methods
   protected: {
     getEmployeeData: async () => {
       const response = await fetch(`${API_URL}/employee/data/`, {

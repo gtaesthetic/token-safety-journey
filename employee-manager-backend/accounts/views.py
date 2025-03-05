@@ -14,16 +14,15 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             
-            # Generate token
+            # Generate tokens
             refresh = RefreshToken.for_user(user)
-            token = str(refresh.access_token)
             
-            # Return user data and token
-            response_serializer = TokenResponseSerializer({
-                'token': token,
-                'user': user
-            })
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            # Return response in the expected format
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
@@ -38,17 +37,15 @@ class LoginView(APIView):
             user = authenticate(request, username=email, password=password)
             
             if user is not None:
-                # Generate token
+                # Generate tokens
                 refresh = RefreshToken.for_user(user)
-                token = str(refresh.access_token)
                 
-                # Return user data and token
-                user_serializer = UserSerializer(user)
-                response_serializer = TokenResponseSerializer({
-                    'token': token,
-                    'user': user
+                # Return response in the expected format
+                return Response({
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh),
+                    'user': UserSerializer(user).data
                 })
-                return Response(response_serializer.data)
             else:
                 return Response(
                     {'error': 'Invalid email or password'}, 
