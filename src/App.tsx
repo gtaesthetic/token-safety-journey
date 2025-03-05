@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,11 +40,17 @@ const App = () => (
                 <ManagerDashboard />
               </ProtectedRoute>
             } />
+            <Route path="admin" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
           </Route>
           
           {/* Backward compatibility routes - redirect to new dashboard paths */}
           <Route path="/employee-dashboard" element={<Navigate to="/dashboard/employee" replace />} />
           <Route path="/manager-dashboard" element={<Navigate to="/dashboard/manager" replace />} />
+          <Route path="/admin-dashboard" element={<Navigate to="/dashboard/admin" replace />} />
           
           {/* Forbidden access route */}
           <Route path="/forbidden" element={<Forbidden />} />

@@ -1,10 +1,9 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
 import { api } from '../services/api';
 
-export type UserRole = 'employee' | 'manager';
+export type UserRole = 'employee' | 'manager' | 'admin';
 
 export interface User {
   id: string;
@@ -35,17 +34,14 @@ interface AuthState {
   clearError: () => void;
 }
 
-// Helper function to extract user data from JWT token
 const extractUserFromToken = (token: string): User | null => {
   try {
     const decoded = jwtDecode<JwtPayload>(token);
     
-    // Check if token has expired
     if (decoded.exp * 1000 < Date.now()) {
       return null;
     }
 
-    // Handle different JWT payload formats (Django vs. mock)
     let name = decoded.name;
     if (!name && (decoded.first_name || decoded.last_name)) {
       name = `${decoded.first_name || ''} ${decoded.last_name || ''}`.trim();
@@ -76,10 +72,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          // Use the real API
           const data = await api.auth.login(email, password);
           
-          // Extract user information from the token
           const user = extractUserFromToken(data.access);
           
           if (!user) {
@@ -104,10 +98,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          // Use the real API
           const data = await api.auth.register(name, email, password, role);
           
-          // Extract user information from the token
           const user = extractUserFromToken(data.access);
           
           if (!user) {
@@ -132,12 +124,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true });
           
-          // If authenticated, call the logout API
           if (get().isAuthenticated && get().token) {
             await api.auth.logout();
           }
           
-          // Clear auth state regardless of API call result
           set({
             token: null,
             user: null,
@@ -146,7 +136,6 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
         } catch (error) {
-          // Even if the API call fails, we still want to clean up local state
           set({
             token: null,
             user: null,
@@ -163,7 +152,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage', // name of the item in localStorage
+      name: 'auth-storage',
       partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )

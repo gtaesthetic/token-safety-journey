@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  allowedRoles?: Array<'employee' | 'manager'>;
+  allowedRoles?: Array<'employee' | 'manager' | 'admin'>;
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {

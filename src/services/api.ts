@@ -1,4 +1,3 @@
-
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../store/authStore';
 
@@ -148,6 +147,77 @@ export const api = {
         method: 'GET',
         headers: getHeaders(true),
       });
+      
+      return handleResponse(response);
+    },
+    
+    getAdminData: async () => {
+      const response = await fetch(`${API_URL}/admin/data/`, {
+        method: 'GET',
+        headers: getHeaders(true),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    getAllUsers: async () => {
+      const response = await fetch(`${API_URL}/admin/users/`, {
+        method: 'GET',
+        headers: getHeaders(true),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    addUser: async (userData: {
+      first_name: string;
+      last_name: string;
+      email: string;
+      password: string;
+      role: UserRole;
+      employment_date: string;
+      department?: string;
+      position?: string;
+      managed_department?: string;
+    }) => {
+      const response = await fetch(`${API_URL}/admin/users/`, {
+        method: 'POST',
+        headers: getHeaders(true),
+        body: JSON.stringify(userData),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    updateUser: async (userId: string, userData: Partial<{
+      first_name: string;
+      last_name: string;
+      email: string;
+      role: UserRole;
+      employment_date: string;
+      department: string;
+      position: string;
+      managed_department: string;
+      is_active: boolean;
+    }>) => {
+      const response = await fetch(`${API_URL}/admin/users/${userId}/`, {
+        method: 'PATCH',
+        headers: getHeaders(true),
+        body: JSON.stringify(userData),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    deleteUser: async (userId: string) => {
+      const response = await fetch(`${API_URL}/admin/users/${userId}/`, {
+        method: 'DELETE',
+        headers: getHeaders(true),
+      });
+      
+      if (response.status === 204) {
+        return { success: true };
+      }
       
       return handleResponse(response);
     },

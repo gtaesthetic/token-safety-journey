@@ -1,192 +1,158 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, UserRole } from '../store/authStore';
-import { toast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { UserRole, useAuthStore } from '../store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Link } from 'react-router-dom';
 
-const RegisterForm: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('employee');
-  const [formErrors, setFormErrors] = useState<{
-    name?: string;
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-  }>({});
-  
-  const { register, isLoading, error, clearError } = useAuthStore();
+// Form validation schema
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+  role: z.enum(['employee', 'manager', 'admin'] as const),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+const RegisterForm = () => {
+  const { register: registerUser, error, isLoading } = useAuthStore();
   const navigate = useNavigate();
+  const [registerError, setRegisterError] = useState<string | null>(null);
 
-  const validateForm = () => {
-    const errors: {
-      name?: string;
-      email?: string;
-      password?: string;
-      confirmPassword?: string;
-    } = {};
-    let valid = true;
-    
-    if (!name.trim()) {
-      errors.name = 'Name is required';
-      valid = false;
-    }
-    
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-      valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Email is invalid';
-      valid = false;
-    }
-    
-    if (!password) {
-      errors.password = 'Password is required';
-      valid = false;
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-      valid = false;
-    }
-    
-    if (password !== confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-      valid = false;
-    }
-    
-    setFormErrors(errors);
-    return valid;
-  };
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors },
+    setValue,
+    watch
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      role: 'employee',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    clearError();
-    
-    if (!validateForm()) return;
-    
+  const watchRole = watch('role');
+
+  const onSubmit = async (data: FormData) => {
     try {
-      await register(name, email, password, role);
+      setRegisterError(null);
       
-      // Get updated state after registration
-      const { user, isAuthenticated } = useAuthStore.getState();
+      // Call registration function from auth store
+      await registerUser(data.name, data.email, data.password, data.role as UserRole);
       
-      if (isAuthenticated && user) {
-        // Redirect based on user role
-        if (user.role === 'employee') {
-          navigate('/employee-dashboard');
-          toast({
-            title: "Account created!",
-            description: "You've successfully registered as an employee.",
-          });
-        } else if (user.role === 'manager') {
-          navigate('/manager-dashboard');
-          toast({
-            title: "Account created!",
-            description: "You've successfully registered as a manager.",
-          });
-        }
+      // Redirect to appropriate dashboard based on role
+      switch (data.role) {
+        case 'employee':
+          navigate('/dashboard/employee');
+          break;
+        case 'manager':
+          navigate('/dashboard/manager');
+          break;
+        case 'admin':
+          navigate('/dashboard/admin');
+          break;
+        default:
+          navigate('/');
       }
     } catch (err) {
-      // Error is handled in the store
+      console.error('Registration failed:', err);
+      setRegisterError(error || 'Registration failed. Please try again.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="form-group">
-        <Label htmlFor="name">Full Name</Label>
+        <Label htmlFor="name" className="form-label">Full Name</Label>
         <Input
           id="name"
-          type="text"
           placeholder="John Doe"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className={formErrors.name ? 'border-destructive' : ''}
+          {...register('name')}
+          className={`form-input ${errors.name ? 'border-destructive' : ''}`}
         />
-        {formErrors.name && <p className="form-error">{formErrors.name}</p>}
+        {errors.name && <p className="form-error">{errors.name.message}</p>}
       </div>
       
       <div className="form-group">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="form-label">Email</Label>
         <Input
           id="email"
           type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={formErrors.email ? 'border-destructive' : ''}
+          placeholder="john.doe@example.com"
+          {...register('email')}
+          className={`form-input ${errors.email ? 'border-destructive' : ''}`}
         />
-        {formErrors.email && <p className="form-error">{formErrors.email}</p>}
+        {errors.email && <p className="form-error">{errors.email.message}</p>}
       </div>
       
       <div className="form-group">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className="form-label">Password</Label>
         <Input
           id="password"
           type="password"
           placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={formErrors.password ? 'border-destructive' : ''}
+          {...register('password')}
+          className={`form-input ${errors.password ? 'border-destructive' : ''}`}
         />
-        {formErrors.password && <p className="form-error">{formErrors.password}</p>}
+        {errors.password && <p className="form-error">{errors.password.message}</p>}
       </div>
       
       <div className="form-group">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          placeholder="••••••••"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className={formErrors.confirmPassword ? 'border-destructive' : ''}
-        />
-        {formErrors.confirmPassword && (
-          <p className="form-error">{formErrors.confirmPassword}</p>
-        )}
-      </div>
-      
-      <div className="form-group">
-        <Label>Account Type</Label>
-        <RadioGroup 
-          value={role} 
-          onValueChange={(value) => setRole(value as UserRole)}
-          className="flex space-x-4 mt-2"
+        <Label htmlFor="role" className="form-label">Role</Label>
+        <Select
+          onValueChange={(value) => setValue('role', value as UserRole)}
+          defaultValue={watchRole}
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="employee" id="employee" />
-            <Label htmlFor="employee" className="cursor-pointer">Employee</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="manager" id="manager" />
-            <Label htmlFor="manager" className="cursor-pointer">Manager</Label>
-          </div>
-        </RadioGroup>
+          <SelectTrigger id="role" className="h-12 w-full">
+            <SelectValue placeholder="Select your role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="employee">Employee</SelectItem>
+            <SelectItem value="manager">Manager</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+          </SelectContent>
+        </Select>
+        {errors.role && <p className="form-error">{errors.role.message}</p>}
       </div>
       
-      {error && (
-        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md animate-fade-in">
-          {error}
+      {registerError && (
+        <div className="bg-destructive/15 text-destructive text-sm p-2 rounded-md">
+          {registerError}
         </div>
       )}
       
-      <Button type="submit" className="w-full h-11" disabled={isLoading}>
-        {isLoading ? 'Creating account...' : 'Create account'}
+      <Button type="submit" className="auth-button" disabled={isLoading}>
+        {isLoading ? 'Registering...' : 'Create Account'}
       </Button>
       
-      <div className="text-center mt-6">
-        <span className="text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <a href="/login" className="auth-link font-medium">
-            Sign in
-          </a>
-        </span>
+      <div className="mt-4 text-center text-sm">
+        Already have an account?{' '}
+        <Link to="/login" className="auth-link">
+          Sign in
+        </Link>
       </div>
     </form>
   );
