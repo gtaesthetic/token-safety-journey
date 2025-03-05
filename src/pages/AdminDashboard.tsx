@@ -117,7 +117,22 @@ const AdminDashboard = () => {
 
   // Mutations
   const addUserMutation = useMutation({
-    mutationFn: api.protected.addUser,
+    mutationFn: (data: UserFormValues) => {
+      // Ensure that all required fields are present
+      const userData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        password: data.password || '', // Provide default empty string if password is optional
+        role: data.role,
+        employment_date: data.employment_date,
+        // Optional fields
+        ...(data.department && { department: data.department }),
+        ...(data.position && { position: data.position }),
+        ...(data.managed_department && { managed_department: data.managed_department }),
+      };
+      return api.protected.addUser(userData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setIsAddUserOpen(false);

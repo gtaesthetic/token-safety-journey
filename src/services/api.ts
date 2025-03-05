@@ -1,3 +1,4 @@
+
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../store/authStore';
 
@@ -180,6 +181,14 @@ export const api = {
       position?: string;
       managed_department?: string;
     }) => {
+      // Before submitting, ensure all required fields are present
+      const requiredFields = ['first_name', 'last_name', 'email', 'password', 'role'];
+      for (const field of requiredFields) {
+        if (!userData[field as keyof typeof userData]) {
+          throw new Error(`Field ${field} is required`);
+        }
+      }
+      
       const response = await fetch(`${API_URL}/admin/users/`, {
         method: 'POST',
         headers: getHeaders(true),
